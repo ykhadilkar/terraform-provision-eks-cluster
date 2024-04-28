@@ -15,7 +15,7 @@ data "aws_availability_zones" "available" {
 }
 
 locals {
-  cluster_name = "education-eks-${random_string.suffix.result}"
+  cluster_name = "yatin-eks-${random_string.suffix.result}"
 }
 
 resource "random_string" "suffix" {
@@ -27,7 +27,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.0.0"
 
-  name = "education-vpc"
+  name = "yatin-vpc"
 
   cidr = "10.0.0.0/16"
   azs  = slice(data.aws_availability_zones.available.names, 0, 3)
@@ -55,7 +55,7 @@ module "eks" {
   version = "19.15.3"
 
   cluster_name    = local.cluster_name
-  cluster_version = "1.27"
+  cluster_version = "1.29"
 
   vpc_id                         = module.vpc.vpc_id
   subnet_ids                     = module.vpc.private_subnets
@@ -73,8 +73,8 @@ module "eks" {
       instance_types = ["t3.small"]
 
       min_size     = 1
-      max_size     = 3
-      desired_size = 2
+      max_size     = 2
+      desired_size = 1
     }
 
     two = {
@@ -115,4 +115,46 @@ resource "aws_eks_addon" "ebs-csi" {
     "eks_addon" = "ebs-csi"
     "terraform" = "true"
   }
+}
+
+resource "aws_subnet" "mongodb_subnet" {
+  vpc_id            = module.vpc.vpc_id
+  cidr_block        = "10.0.7.0/24" 
+  availability_zone = data.aws_availability_zones.available.names[0]
+}
+
+resource "aws_security_group" "mongodb_sg" {
+  name        = "mongodb-security-group"
+  description = "Allow MongoDB access"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port   = 27017
+    to_port     = 27017
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] 
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "mongodb" {
+  ami             = "ami-04b70fa74e45c3917" # Ubuntu AMI for MongoDB
+  instance_type   = "t3.small" 
+  subnet_id       = aws_subnet.mongodb_subnet.id  
+  security_groups = [aws_security_group.mongodb_sg.name]
+
+  user_data = <<EOF
+  #!/bin/bash
+  # Update package lists and install MongoDB
+  apt-get update 
+  apt-get install -y mongodb-org
+  systemctl start mongod
+
+  EOF
 }

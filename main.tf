@@ -32,17 +32,17 @@ module "vpc" {
   cidr = "10.0.0.0/16"
   azs  = slice(data.aws_availability_zones.available.names, 0, 3)
 
-  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  public_subnets  = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24", "10.0.8.0/24"]
+  private_subnets = ["10.0.1.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.2.0/24"]
 
   enable_nat_gateway   = true
   single_nat_gateway   = true
   enable_dns_hostnames = true
 
-  public_subnet_tags = {
-    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
-    "kubernetes.io/role/elb"                      = 1
-  }
+  # public_subnet_tags = {
+  #   "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+  #   "kubernetes.io/role/elb"                      = 1
+  # }
 
   private_subnet_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
@@ -73,17 +73,7 @@ module "eks" {
       instance_types = ["t3.small"]
 
       min_size     = 1
-      max_size     = 2
-      desired_size = 1
-    }
-
-    two = {
-      name = "node-group-2"
-
-      instance_types = ["t3.small"]
-
-      min_size     = 1
-      max_size     = 2
+      max_size     = 3
       desired_size = 1
     }
   }
@@ -119,7 +109,7 @@ resource "aws_eks_addon" "ebs-csi" {
 
 resource "aws_subnet" "mongodb_subnet" {
   vpc_id            = module.vpc.vpc_id
-  cidr_block        = "10.0.7.0/24" 
+  cidr_block        = "10.0.4.0/24" 
   availability_zone = data.aws_availability_zones.available.names[0]
 }
 
@@ -153,7 +143,7 @@ resource "aws_security_group" "mongodb_sg" {
 resource "aws_instance" "mongodb" {
   ami             = "ami-016ae044d99300b1e" # Ubuntu AMI for MongoDB
   instance_type   = "t3.small" 
-  subnet_id       = module.vpc.public_subnets[3] # aws_subnet.mongodb_subnet.id
+  subnet_id       = module.vpc.public_subnets[0] # aws_subnet.mongodb_subnet.id
   key_name        = "yatin-key-pair"
   security_groups = [aws_security_group.mongodb_sg.id]
   associate_public_ip_address = true

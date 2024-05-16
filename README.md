@@ -16,13 +16,14 @@ tf destroy
 aws eks --region $(terraform output -raw region) update-kubeconfig \
     --name $(terraform output -raw cluster_name)
 ```
+
+# Login to Mongo VM
+
+`ssh -i "yatin-key-pair.pem" bitnami@xx.xxx.xx.xx`
+
 # Mongo
+
+### Get password from EC2 -> Monitor -> Get Systemlog
 - Login `mongosh admin --username root -p --host xx.xx.xx.xx`
 - Add user `db.createUser( { user: "dbuser", pwd: "xxxxxx", roles: [ "readWrite", "dbAdmin" ]} )`
 
-
-# Login to Mongo
-
-Get password from EC2 -> Monitor -> Get Systemlog
-
-`mongosh admin --username root -p --host <host-ip>`

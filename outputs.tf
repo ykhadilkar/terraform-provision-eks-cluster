@@ -20,3 +20,8 @@ output "cluster_name" {
   description = "Kubernetes Cluster Name"
   value       = module.eks.cluster_name
 }
+
+output "mongodb_vm_ip" {
+  description = "Mongo VM Public IP"
+  value = aws_instance.mongodb.public_ip
+}

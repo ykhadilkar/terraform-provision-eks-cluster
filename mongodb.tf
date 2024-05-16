@@ -36,7 +36,29 @@ resource "aws_instance" "mongodb" {
   instance_type   = "t3.small" 
   subnet_id       = module.vpc.public_subnets[0] # aws_subnet.mongodb_subnet.id
   key_name        = "yatin-key-pair"
-  security_groups = [aws_security_group.mongodb_sg.id]
+  vpc_security_group_ids = [aws_security_group.mongodb_sg.id]
   associate_public_ip_address = true
-  
+  iam_instance_profile   = aws_iam_instance_profile.s3-write-profile.name
+  user_data = data.cloudinit_config.mongo-files.rendered
+}
+
+# cloud-init config for user-data script and backup script
+data "cloudinit_config" "mongo-files" {
+  gzip          = false
+  base64_encode = false
+
+  part {
+    content_type = "text/cloud-config"
+    filename     = "cloud.conf"
+    content = yamlencode(
+      {
+        "write_files" : [
+          {
+            "path" : "/home/bitnami/mongodb-backup.sh",
+            "content" : file("mongodb-backup.sh"),
+          }
+        ],
+      }
+    )
+  }
 }

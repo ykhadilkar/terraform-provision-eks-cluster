@@ -26,6 +26,7 @@ aws eks --region $(terraform output -raw region) update-kubeconfig \
 ### Get password from EC2 -> Monitor -> Get Systemlog
 - Login `mongosh admin --username root -p --host xx.xx.xx.xx`
 - Add user `db.createUser( { user: "dbuser", pwd: "passw0rd", roles: [ "readWrite", "dbAdmin" ]} )`
+- Show current data `db.person.find()`
 - Update backup script with correct password
-- TODO: Cron job
+- 
 
